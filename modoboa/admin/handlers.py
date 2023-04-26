@@ -3,6 +3,7 @@
 from rq import Queue
 from redis import Redis
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.db.models import signals
@@ -52,7 +53,10 @@ def update_domain_mxs_and_mailboxes(sender, instance, **kwargs):
 def create_dkim_key(sender, instance, **kwargs):
     if not instance.enable_dkim:
         return
-    q = Queue("default", connection=Redis())
+    q = Queue(
+        "default",
+        connection=Redis(settings.REDIS_HOST, settings.REDIS_PORT)
+    )
     q.enqueue(call_command,
               "modo",
               "manage_dkim_keys",
