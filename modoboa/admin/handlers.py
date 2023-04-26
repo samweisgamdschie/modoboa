@@ -1,6 +1,10 @@
 """Django signal handlers for admin."""
 
+from rq import Queue
+from redis import Redis
+
 from django.contrib.contenttypes.models import ContentType
+from django.core.management import call_command
 from django.db.models import signals
 from django.dispatch import receiver
 from django.urls import reverse
@@ -42,6 +46,17 @@ def update_domain_mxs_and_mailboxes(sender, instance, **kwargs):
         alias.address = "{}@{}".format(
             alias.address.split("@", 1)[0], instance.name)
         alias.save(update_fields=["address"])
+
+
+@receiver(signals.post_save, sender=models.Domain)
+def create_dkim_key(sender, instance, **kwargs):
+    if not instance.enable_dkim:
+        return
+    q = Queue("default", connection=Redis())
+    q.enqueue(call_command,
+              "modo",
+              "manage_dkim_keys",
+              "--domain=instance.name")
 
 
 @receiver(signals.post_save, sender=models.DomainAlias)
