@@ -56,13 +56,29 @@ class ManageDKIMKeys(BaseCommand):
         domain.dkim_public_key = public_key
         domain.save(update_fields=["dkim_public_key", "dkim_private_key_path"])
 
+    def add_arguments(self, parser):
+        """Add arguments to command."""
+        parser.add_argument(
+            "--domain", type=str, dest="domain", default="",
+            help="Domain target for keys generation."
+        )
+
     def handle(self, *args, **options):
         """Entry point."""
-        self.default_key_length = param_tools.get_global_parameter(
-            "dkim_default_key_length")
-        qset = models.Domain.objects.filter(
-            enable_dkim=True, dkim_private_key_path="")
-        for domain in qset:
-            self.create_new_dkim_key(domain)
-        if qset.exists():
-            signals.new_dkim_keys.send(sender=self.__class__, domains=qset)
+        if options["domain"] != "":
+            domain = models.Domain.objects.filter(name=options["domain"],
+                                                  enable_dkim=True,
+                                                  dkim_private_key_path="")
+            if domain.exists():
+                self.create_new_dkim_key(domain[0])
+                signals.new_dkim_keys.send(sender=self.__class__,
+                                           domains=domain)
+        else:
+            self.default_key_length = param_tools.get_global_parameter(
+                "dkim_default_key_length")
+            qset = models.Domain.objects.filter(
+                enable_dkim=True, dkim_private_key_path="")
+            for domain in qset:
+                self.create_new_dkim_key(domain)
+            if qset.exists():
+                signals.new_dkim_keys.send(sender=self.__class__, domains=qset)
