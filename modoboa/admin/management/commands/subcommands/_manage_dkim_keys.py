@@ -19,10 +19,12 @@ class ManageDKIMKeys(BaseCommand):
 
     def create_new_dkim_key(self, domain):
         """Create a new DKIM key."""
+        print("CREATING KEY")
         storage_dir = param_tools.get_global_parameter("dkim_keys_storage_dir")
         pkey_path = os.path.join(storage_dir, "{}.pem".format(domain.name))
         alarm_qset = domain.alarms.filter(internal_name=DKIM_WRITE_ERROR)
         if not os.access(storage_dir, os.W_OK):
+            print("ACCESS ISSUE")
             if not alarm_qset.exists():
                 domain.alarms.create(
                     title=_("DKIM path non-writable"),

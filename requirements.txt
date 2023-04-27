@@ -49,3 +49,4 @@ python-magic>=0.4.24
 
 # RQ
 rq>=1.13.0
+django-rq
