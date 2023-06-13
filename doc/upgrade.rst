@@ -124,6 +124,48 @@ If you use Postgresql, you need to install pyscopg3+:
 
    pip install psycopg[binary]>=3.1
 
+Admins now have the option to set a recieve-only mailbox or a send-only mailbox.
+
+Generate new maps for postfix from your virtual environment:
+
+.. sourcecode:: python
+   > python3 manage.py generate_postfix_maps --destdir /etc/postfix/ --force-overwrite
+
+Send-only mailboxes do not have access to IMAP.
+You need to change your dovecot configuration to enable it.
+
+If you use ``Postgres``:
+Change ``user_query`` in ``/etc/dovecot/dovecot-sql-master.conf.ext``:
+
+.. sourcecode::
+   user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, %mailboxes_owner_gid as gid, '*:bytes=' || mb.quota || 'M' AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id INNER JOIN core_user u ON u.id=mb.user_id WHERE mb.is_send_only AND mb.address='%%n' AND dom.name='%%d'
+
+
+You need to add ``proxy:pgsql:/etc/postfix/sql-send-only.cf`` to ``smtpd_recipient_restrictions`` in ``/etc/postfix/main.cf``:
+
+.. sourcecode::
+   smtpd_recipient_restrictions =
+      ...
+      check_recipient_access
+          proxy:pgsql:/etc/postfix/sql-send-only.cf
+          ...
+
+
+If you use ``MySQL``:
+Change ``password_query`` in ``/etc/dovecot/dovecot-sql-master.conf.ext``:
+
+.. sourcecode::
+   user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, %mailboxes_owner_gid as gid, CONCAT('*:bytes=', mb.quota, 'M') AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id INNER JOIN core_user u ON u.id=mb.user_id WHERE mb.is_send_only=1 AND mb.address='%%n' AND dom.name='%%d'
+
+You need to add ``proxy:mysql:/etc/postfix/sql-send-only.cf`` to ``smtpd_recipient_restrictions`` in ``/etc/postfix/main.cf``:
+
+.. sourcecode::
+   smtpd_recipient_restrictions =
+      ...
+      check_recipient_access
+          proxy:pgsql:/etc/postfix/sql-send-only.cf
+          ...
+
 
 2.1.0
 =====
