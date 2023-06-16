@@ -51,7 +51,7 @@ jobs:
       redis:
         image: redis
         ports:
-          - 6379:6379
+          - 6379/tcp
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
@@ -115,6 +115,7 @@ jobs:
           MYSQL_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
           MYSQL_USER: root
           REDIS_HOST: localhost
+          REDIS_PORT: ${{ job.services.redis.ports[6379] }}
           LDAP_SERVER_PORT: ${{ job.services.openldap.ports[389] }}
 
       - name: Test with pytest and coverage
@@ -134,6 +135,7 @@ jobs:
           MYSQL_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
           MYSQL_USER: root
           REDIS_HOST: localhost
+          REDIS_PORT: ${{ job.services.redis.ports[6379] }}
           LDAP_SERVER_PORT: ${{ job.services.openldap.ports[389] }}
       - name: Upload coverage result
         if: ${{ matrix.python-version == '3.10' && matrix.database == 'postgres' }}
