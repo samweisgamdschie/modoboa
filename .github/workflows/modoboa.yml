@@ -51,7 +51,12 @@ jobs:
       redis:
         image: redis
         ports:
-          - 6379/tcp
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       openldap:
         image: docker.pkg.github.com/modoboa/docker-openldap/docker-openldap
         ports:
@@ -109,7 +114,7 @@ jobs:
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
           MYSQL_USER: root
-          REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+          REDIS_HOST: redis
           LDAP_SERVER_PORT: ${{ job.services.openldap.ports[389] }}
 
       - name: Test with pytest and coverage
@@ -128,7 +133,7 @@ jobs:
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
           MYSQL_USER: root
-          REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+          REDIS_HOST: redis
           LDAP_SERVER_PORT: ${{ job.services.openldap.ports[389] }}
       - name: Upload coverage result
         if: ${{ matrix.python-version == '3.10' && matrix.database == 'postgres' }}
