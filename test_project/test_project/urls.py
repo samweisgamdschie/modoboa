@@ -1,6 +1,6 @@
-from django.conf.urls import include, url
+from django.urls import include, path
 
 urlpatterns = [
-    url(r"", include("modoboa.urls")),
-    url(r"django_rq/", include("django_rq.urls")),
+    path("", include("modoboa.urls")),
+    path("django_rq/", include("django_rq.urls")),
 ]
